@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MyChatbot</title>
+
+<style>
+  /* html and body need height:100% so our chat box can fill the whole screen. */
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+
+  /* No more fixed width, no background box behind it, no rounded corners. */
+  /* It now fills the entire browser window, like a normal webpage. */
+  .chat-box {
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header now has a gradient and a little round avatar. */
+  .header {
+    background: linear-gradient(135deg, #2c3e50, #1abc9c);
+    color: white;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+  }
+
+  .header-text h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .header-text p {
+    margin: 2px 0 0;
+    font-size: 11px;
+    opacity: 0.85;
+  }
+
+  /* flex: 1 means "take up all the leftover space" between the header */
+  /* and the input box at the bottom, instead of a fixed height. */
+  .messages {
+    flex: 1;
+    overflow-y: scroll;
+    padding: 16px;
+    background-color: #f7f8fa;
+  }
+
+  .row {
+    display: flex;
+    margin: 10px 0;
+    animation: fadeIn 0.25s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .row.bot { justify-content: flex-start; }
+  .row.user { justify-content: flex-end; }
+
+  .bubble {
+    max-width: 75%;
+    padding: 11px 15px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.45;
+    word-wrap: break-word;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  .bot .bubble {
+    background-color: white;
+    color: #222;
+    border: 1px solid #e3e5e8;
+    border-bottom-left-radius: 4px;
+  }
+
+  .user .bubble {
+    background: linear-gradient(135deg, #2c3e50, #1abc9c);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid #eee;
+    background-color: white;
+  }
+
+  .input-row input {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .input-row input:focus {
+    border-color: #1abc9c;
+  }
+
+  .input-row button {
+    background: linear-gradient(135deg, #2c3e50, #1abc9c);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 0 20px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .input-row button:hover {
+    opacity: 0.9;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+</style>
+</head>
+
+<body>
+
+<div class="chat-box">
+  <div class="header">
+    <div class="avatar">M</div>
+    <div class="header-text">
+      <h2>MyChatbot</h2>
+      <p>Powered by Python + Flask</p>
+    </div>
+  </div>
+
+  <div class="messages" id="messages"></div>
+
+  <div class="input-row">
+    <input type="text" id="userInput" placeholder="Type a message...">
+    <button onclick="handleSend()">Send</button>
+  </div>
+</div>
+
+<script>
+  // All the thinking happens in app.py (Python).
+  // This file only shows messages and talks to the server.
+
+  function addMessage(text, sender) {
+    var messagesBox = document.getElementById("messages");
+
+    var row = document.createElement("div");
+    row.className = "row " + sender;
+
+    var bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = text;
+
+    row.appendChild(bubble);
+    messagesBox.appendChild(row);
+
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  }
+
+  async function handleSend() {
+    var inputBox = document.getElementById("userInput");
+    var userText = inputBox.value;
+
+    if (userText.trim() === "") {
+      return;
+    }
+
+    addMessage(userText, "user");
+    inputBox.value = "";
+
+    var response = await fetch("/get_response", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userText })
+    });
+
+    var data = await response.json();
+    addMessage(data.reply, "bot");
+  }
+
+  document.getElementById("userInput").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+      handleSend();
+    }
+  });
+
+  addMessage("Hi! I'm MyChatbot. Type something to see what I can do.", "bot");
+</script>
+
+</body>
+</html>
